@@ -1,5 +1,5 @@
-(ns fsm-abonnement.core)
-
+(ns fsm-abonnement.core
+  (:use [clojure.contrib.seq-utils :only [find-first]]))
 
 (defn state-machine [transition-table initial-state]
   (ref initial-state :meta transition-table))
@@ -25,6 +25,34 @@
            (on-success))
          (dosync (ref-set state transition))))))
 
+(defn abon-state [input]
+  {:start [{:conditions [#(= input :opret)] :on-success #(prn "Opret pending") :transition :pending}]
+   :pending [{:conditions [#(= input :itakst)] :on-success #(prn "Saet Itakst") :transition :active}
+             {:conditions [#(= input :itakst-vip)] :on-success #(prn "Saet til VIP") :transition :permanent}]
+   :active [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret") :transition :terminated}
+            {:conditions [#(= input :canceled)] :on-success #(prn "Ophoer") :transition :cancellation-pending}]
+   :canceled [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra lukning") :transition :active}]
+   :cancellation-pending [{:conditions [#(= input :cancellation-date)] :on-success #(prn "Lukket") :transition :canceled}]
+   :terminated [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra terminering") :transition :active}]
+   :permanent [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret VIP") :transition :terminated}]})
+
+(let [sm (state-machine (abon-state :terminated) :active)]    
+  (update-state sm)
+  (println @sm))
+
+(def traffic-light
+     {:green [{:conditions [] :transition :yellow}]
+      :yellow  [{:conditions [] :transition :red}]
+      :red [{:conditions [] :transition :green}]})
+
+(comment (let [sm (state-machine traffic-light :green)]
+   (dotimes [_ 4]
+     (println @sm)
+     (update-state sm))))
+
+
+(defn pop-char [char-seq]
+  (dosync (ref-set char-seq (rest @char-seq))))
 
 (defn find-lisp [char-seq]
    (let [start-trans {:conditions []
@@ -56,7 +84,7 @@
                  :transition :start}
                 start-trans]}))
 
-(let [char-seq (ref "ablislasllllispsslis")
+(comment (let [char-seq (ref "ablisplasllllispsslis")
        sm (state-machine (find-lisp char-seq) :start)] 
    (dotimes [_ (count @char-seq)]
-     (update-state sm)))
+     (update-state sm))))
