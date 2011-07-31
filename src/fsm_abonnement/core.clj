@@ -30,7 +30,8 @@
    :pending [{:conditions [#(= input :itakst)] :on-success #(prn "Saet Itakst") :transition :active}
              {:conditions [#(= input :itakst-vip)] :on-success #(prn "Saet til VIP") :transition :permanent}]
    :active [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret") :transition :terminated}
-            {:conditions [#(= input :canceled)] :on-success #(prn "Ophoer") :transition :cancellation-pending}]
+            {:conditions [#(= input :canceled)] :on-success #(prn "Ophoer") :transition :cancellation-pending}
+            {:conditions [#(= input :skift-produkt)] :on-success #(prn "Reprovisioner abonnement") :transition :active}]
    :canceled [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra lukning") :transition :active}]
    :cancellation-pending [{:conditions [#(= input :cancellation-date)] :on-success #(prn "Lukket") :transition :canceled}]
    :terminated [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra terminering") :transition :active}]
