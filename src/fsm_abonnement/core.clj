@@ -31,11 +31,14 @@
              {:conditions [#(= input :itakst-vip)] :on-success #(prn "Saet til VIP") :transition :permanent}]
    :active [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret") :transition :terminated}
             {:conditions [#(= input :canceled)] :on-success #(prn "Ophoer") :transition :cancellation-pending}
-            {:conditions [#(= input :skift-produkt)] :on-success #(prn "Reprovisioner abonnement") :transition :active}]
+            {:conditions [#(= input :skift-produkt)] :on-success #(prn "Reprovisioner abonnement") :transition :active}
+            {:conditions [#(= input :manglende-betaling)] :on-success #(prn "Suspender abonnement pga. manglende betaling") :transition :suspended}]
+   :suspended [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra suspended") :transition :active}] 
    :canceled [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra lukning") :transition :active}]
    :cancellation-pending [{:conditions [#(= input :cancellation-date)] :on-success #(prn "Lukket") :transition :canceled}]
    :terminated [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra terminering") :transition :active}]
-   :permanent [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret VIP") :transition :terminated}]})
+   :permanent [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret VIP") :transition :terminated}]
+   :inactive [{:conditions [#(= input :terminated)] :on-success #(prn "Reaktiver fra inaktiv") :transition :active}]})
 
 (let [sm (state-machine (abon-state :terminated) :active)]    
   (update-state sm)
