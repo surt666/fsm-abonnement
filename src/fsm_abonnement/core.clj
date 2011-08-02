@@ -26,6 +26,7 @@
         (dosync (ref-set state transition))))))
 
 (defn abon-state [new-state]
+  "Bruges hvis status aendres i ARIA og der skal reprovisioneres"
   {:pending [{:conditions [#(= new-state :active)] :on-success #(prn "State fra pending til active") :transition :active}]
    :active [{:conditions [#(= new-state :terminated)] :on-success #(prn "State fra active til terminated") :transition :terminated}]
    :suspended [{:conditions [#(= new-state :active)] :on-success #(prn "State fra suspended til active") :transition :active}] 
@@ -36,6 +37,7 @@
    :inactive [{:conditions [#(= new-state :active)] :on-success #(prn "State fra inactive til active") :transition :active}]})
 
 (defn abon-input [input]
+  "Bruges hvis der sker en handling i ordre systemet der skal medfoere status aendring samt evt. lager bestilling og/eller provisionering"
   {:start [{:conditions [#(= input :opret)] :on-success #(prn "Opret pending") :transition :pending}]
    :pending [{:conditions [#(= input :itakst)] :on-success #(prn "Saet Itakst") :transition :active}
              {:conditions [#(= input :itakst-vip)] :on-success #(prn "Saet til VIP") :transition :permanent}]
