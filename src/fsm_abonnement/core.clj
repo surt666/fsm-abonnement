@@ -25,7 +25,17 @@
           (on-success))
         (dosync (ref-set state transition))))))
 
-(defn abon-state [input]
+(defn abon-state [new-state]
+  {:pending [{:conditions [#(= new-state :active)] :on-success #(prn "State fra pending til active") :transition :active}]
+   :active [{:conditions [#(= new-state :terminated)] :on-success #(prn "State fra active til terminated") :transition :terminated}]
+   :suspended [{:conditions [#(= new-state :active)] :on-success #(prn "State fra suspended til active") :transition :active}] 
+   :canceled [{:conditions [#(= new-state :active)] :on-success #(prn "State fra canceled til active") :transition :active}]
+   :cancellation-pending [{:conditions [#(= new-state :canceled)] :on-success #(prn "State fra cancellation-pending til canceled") :transition :canceled}]
+   :terminated [{:conditions [#(= new-state :active)] :on-success #(prn "State fra terminated til active") :transition :active}]
+   :permanent [{:conditions [#(= new-state :terminated)] :on-success #(prn "State fra permanent til terminated") :transition :terminated}]
+   :inactive [{:conditions [#(= new-state :active)] :on-success #(prn "State fra inactive til active") :transition :active}]})
+
+(defn abon-input [input]
   {:start [{:conditions [#(= input :opret)] :on-success #(prn "Opret pending") :transition :pending}]
    :pending [{:conditions [#(= input :itakst)] :on-success #(prn "Saet Itakst") :transition :active}
              {:conditions [#(= input :itakst-vip)] :on-success #(prn "Saet til VIP") :transition :permanent}]
@@ -38,9 +48,9 @@
    :cancellation-pending [{:conditions [#(= input :cancellation-date)] :on-success #(prn "Lukket") :transition :canceled}]
    :terminated [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiveret fra terminering") :transition :active}]
    :permanent [{:conditions [#(= input :terminated)] :on-success #(prn "Termineret VIP") :transition :terminated}]
-   :inactive [{:conditions [#(= input :terminated)] :on-success #(prn "Reaktiver fra inaktiv") :transition :active}]})
+   :inactive [{:conditions [#(= input :reaktiver)] :on-success #(prn "Reaktiver fra inaktiv") :transition :active}]})
 
-(let [sm (state-machine (abon-state :terminated) :active)]    
+(let [sm (state-machine (abon-state :canceled) :cancellation-pending)]    
   (update-state sm)
   (println @sm))
 
